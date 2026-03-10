@@ -193,6 +193,9 @@ a {
 .info-list li + li {
   margin-top: 0.7rem;
 }
+.exceptional-list li {
+  line-height: 1.7;
+}
 
 .map-wrapper {
   margin-top: 1.5rem;
@@ -405,4 +408,35 @@ a {
   .map-embed {
     height: 280px;
   }
+  .store-status {
+  margin-top: 1.2rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.store-status strong {
+  font-weight: 800;
+}
+
+.status-word {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.status-open {
+  color: #2f8f4e;
+}
+
+.status-closed {
+  color: #d64545;
+}
+
+.status-warning {
+  color: #b96a16;
+}
 }
