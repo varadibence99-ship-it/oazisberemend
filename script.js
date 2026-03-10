@@ -9,11 +9,7 @@ const revealObserver = new IntersectionObserver(
     });
     const exceptionalSchedule = {
   "2026-03-15": { closed: true, label: "2026.03.15. vasárnap: ZÁRVA" },
-  "2026-04-03": {
-    closed: false,
-    periods: [{ start: "07:00", end: "11:00" }],
-    label: "2026.04.03. péntek: 7:00 - 11:00"
-  },
+  "2026-04-03": { closed: true, label: "2026.04.03. péntek: ZÁRVA"  },
   "2026-04-06": { closed: true, label: "2026.04.06. hétfő: ZÁRVA" }
 };
 
