@@ -1,407 +1,134 @@
-:root {
-  --bg: #fffdf8;
-  --bg-soft: #fff7ed;
-  --card: rgba(255, 255, 255, 0.72);
-  --text: #1f2937;
-  --muted: #6b7280;
-  --line: rgba(31, 41, 55, 0.08);
-  --primary: #78c26d;
-  --primary-strong: #4f9b55;
-  --accent: #ffb86b;
-  --shadow: 0 20px 50px rgba(31, 41, 55, 0.08);
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 16px;
-  --container: 1120px;
+function formatTimeLeft(ms) {
+  const totalMinutes = Math.floor(ms / 1000 / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours} óra ${minutes} perc`;
+  }
+
+  return `${minutes} perc`;
 }
 
-* {
-  box-sizing: border-box;
+function getTodaySchedule(day) {
+  if (day >= 1 && day <= 5) {
+    return [
+      { start: "07:00", end: "11:00" },
+      { start: "14:00", end: "16:30" }
+    ];
+  }
+
+  if (day === 6) {
+    return [
+      { start: "07:00", end: "11:00" }
+    ];
+  }
+
+  if (day === 0) {
+    return [
+      { start: "07:00", end: "09:30" }
+    ];
+  }
+
+  return [];
 }
 
-html {
-  scroll-behavior: smooth;
+function timeToDate(baseDate, timeString) {
+  const [hours, minutes] = timeString.split(":").map(Number);
+  const date = new Date(baseDate);
+  date.setHours(hours, minutes, 0, 0);
+  return date;
 }
 
-body {
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(120, 194, 109, 0.14), transparent 30%),
-    radial-gradient(circle at top right, rgba(255, 184, 107, 0.16), transparent 25%),
-    linear-gradient(180deg, #fffdf8 0%, #fff8f0 100%);
-  line-height: 1.6;
+function findNextOpening(now) {
+  for (let i = 0; i < 7; i++) {
+    const checkDate = new Date(now);
+    checkDate.setDate(now.getDate() + i);
+
+    const day = checkDate.getDay();
+    const schedule = getTodaySchedule(day);
+
+    for (const period of schedule) {
+      const startDate = timeToDate(checkDate, period.start);
+
+      if (startDate > now) {
+        return startDate;
+      }
+    }
+  }
+
+  return null;
 }
 
-img {
-  max-width: 100%;
-  display: block;
-}
+function updateStoreStatus() {
+  const statusElement = document.getElementById("storeStatus");
+  if (!statusElement) return;
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  const now = new Date();
+  const todaySchedule = getTodaySchedule(now.getDay());
 
-.container {
-  width: min(100% - 2rem, var(--container));
-  margin: 0 auto;
-}
+  let isOpen = false;
+  let closingTime = null;
+  let nextOpening = null;
 
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  backdrop-filter: blur(14px);
-  background: rgba(255, 253, 248, 0.75);
-  border-bottom: 1px solid rgba(31, 41, 55, 0.06);
-}
+  for (const period of todaySchedule) {
+    const startDate = timeToDate(now, period.start);
+    const endDate = timeToDate(now, period.end);
 
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 78px;
-}
+    if (now >= startDate && now < endDate) {
+      isOpen = true;
+      closingTime = endDate;
+      break;
+    }
 
-.logo {
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
+    if (now < startDate && !nextOpening) {
+      nextOpening = startDate;
+    }
+  }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+  if (isOpen && closingTime) {
+    const remaining = closingTime - now;
+    const isClosingSoon = remaining <= 60 * 60 * 1000;
 
-.nav-links a {
-  padding: 0.8rem 1rem;
-  border-radius: 999px;
-  color: var(--muted);
-  font-weight: 600;
-  transition: 0.25s ease;
-}
+    if (isClosingSoon) {
+      statusElement.innerHTML = `
+        Jelenleg: <strong><span class="status-word status-warning">HAMAROSAN ZÁRUNK</span></strong><br>
+        Ennyi idő múlva zárunk: ${formatTimeLeft(remaining)}
+      `;
+    } else {
+      statusElement.innerHTML = `
+        Jelenleg: <strong><span class="status-word status-open">NYITVA</span></strong> vagyunk<br>
+        Ennyi idő múlva zárunk: ${formatTimeLeft(remaining)}
+      `;
+    }
+    return;
+  }
 
-.nav-links a:hover,
-.nav-links a.active {
-  background: rgba(120, 194, 109, 0.14);
-  color: var(--text);
-}
+  if (!nextOpening) {
+    nextOpening = findNextOpening(now);
+  }
 
-.hero,
-.page-hero {
-  padding: 7rem 0 4rem;
-}
+  if (nextOpening) {
+    const remainingToOpen = nextOpening - now;
+    const isOpeningSoon = remainingToOpen <= 60 * 60 * 1000;
 
-.hero-content,
-.page-hero-content {
-  max-width: 820px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.eyebrow {
-  display: inline-block;
-  margin: 0 0 1rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  background: rgba(120, 194, 109, 0.16);
-  color: var(--primary-strong);
-  font-size: 0.92rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.hero h1,
-.page-hero h1 {
-  margin: 0;
-  font-size: clamp(2.4rem, 5vw, 4.7rem);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
-}
-
-.hero h2 {
-  margin: 1.1rem auto 0;
-  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
-  font-weight: 600;
-  color: var(--primary-strong);
-}
-
-.hero-text,
-.page-subtitle {
-  max-width: 760px;
-  margin: 1.2rem auto 0;
-  font-size: 1.03rem;
-  color: var(--muted);
-}
-
-.info-section,
-.about-section,
-.products-section,
-.gallery-section {
-  padding: 2rem 0 5rem;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-}
-
-.info-card,
-.map-card,
-.about-block,
-.product-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow);
-}
-
-.info-card,
-.map-card {
-  padding: 1.7rem;
-}
-
-.info-card h3,
-.map-card h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  margin: 0 0 1rem;
-  font-size: 1.15rem;
-}
-
-.info-card i,
-.map-card i {
-  color: var(--primary-strong);
-}
-
-.info-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  color: var(--muted);
-}
-
-.info-list li + li {
-  margin-top: 0.7rem;
-}
-
-.map-wrapper {
-  margin-top: 1.5rem;
-}
-
-.map-embed {
-  overflow: hidden;
-  border-radius: 20px;
-  height: 340px;
-  margin-top: 1rem;
-}
-
-.section-heading {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.section-heading h2,
-.section-title-left {
-  margin: 0;
-  font-size: clamp(1.8rem, 3.4vw, 2.7rem);
-  letter-spacing: -0.04em;
-}
-
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.2rem;
-}
-
-.gallery-item {
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  min-height: 260px;
-}
-
-.gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.45s ease;
-}
-
-.gallery-item:hover img {
-  transform: scale(1.05);
-}
-
-.about-content {
-  max-width: 860px;
-  margin: 0 auto;
-}
-
-.section-title-left {
-  margin-bottom: 1.4rem;
-}
-
-.about-block {
-  padding: 1.8rem;
-}
-
-.about-block + .about-block {
-  margin-top: 1.2rem;
-}
-
-.about-block h3 {
-  margin: 0 0 0.7rem;
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
-}
-
-.about-block p {
-  margin: 0;
-  color: var(--muted);
-}
-
-.hover-highlight {
-  display: inline-block;
-  font-weight: 800;
-  transition: 0.25s ease;
-}
-
-.hover-highlight:hover {
-  color: var(--primary-strong);
-  transform: scale(1.08);
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.2rem;
-}
-
-.product-card {
-  padding: 1.6rem;
-  text-align: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 54px rgba(31, 41, 55, 0.12);
-}
-
-.product-icon {
-  width: 74px;
-  height: 74px;
-  margin: 0 auto 1rem;
-  display: grid;
-  place-items: center;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(120, 194, 109, 0.18), rgba(255, 184, 107, 0.2));
-  font-size: 1.8rem;
-  color: var(--primary-strong);
-}
-
-.product-card h3 {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.4;
-}
-
-.site-footer {
-  padding: 1.4rem 0 2.2rem;
-}
-
-.footer-content {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@media (max-width: 960px) {
-  .info-grid,
-  .gallery-grid,
-  .products-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    if (isOpeningSoon) {
+      statusElement.innerHTML = `
+        Jelenleg: <strong><span class="status-word status-warning">HAMAROSAN NYITUNK</span></strong><br>
+        Nyitásig: ${formatTimeLeft(remainingToOpen)}
+      `;
+    } else {
+      statusElement.innerHTML = `
+        Jelenleg: <strong><span class="status-word status-closed">ZÁRVA</span></strong> vagyunk<br>
+        Nyitásig: ${formatTimeLeft(remainingToOpen)}
+      `;
+    }
+  } else {
+    statusElement.innerHTML = `
+      Jelenleg: <strong><span class="status-word status-closed">ZÁRVA</span></strong> vagyunk
+    `;
   }
 }
 
-@media (max-width: 700px) {
-  .nav {
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.8rem;
-    padding: 1rem 0;
-  }
-
-  .hero,
-  .page-hero {
-    padding: 5rem 0 2.5rem;
-  }
-
-  .info-grid,
-  .gallery-grid,
-  .products-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .info-card,
-  .map-card,
-  .about-block,
-  .product-card {
-    border-radius: 22px;
-  }
-
-  .map-embed {
-    height: 280px;
-  }
-  .store-status {
-  margin-top: 1.2rem;
-  padding: 1rem 1.1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(31, 41, 55, 0.08);
-  color: var(--text);
-  font-weight: 500;
-  line-height: 1.6;
-}
-
-.store-status strong {
-  font-weight: 800;
-}
-
-.status-word {
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-.status-open {
-  color: #2f8f4e;
-}
-
-.status-closed {
-  color: #d64545;
-}
-
-.status-warning {
-  color: #b96a16;
-}
-}
+updateStoreStatus();
+setInterval(updateStoreStatus, 30000);
