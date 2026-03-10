@@ -120,7 +120,7 @@ function updateStoreStatus() {
     } else {
       statusElement.classList.add("open");
       statusElement.innerHTML = `
-        <strong><span class="status-word status-open">NYITVA</span></strong><br>
+        <strong><span class="status-word status-open">Gyere be hozzánk, NYITVA vagyunk</span></strong><br>
         Ennyi idő múlva zárunk: ${formatTimeLeft(remaining)}
       `;
     }
@@ -144,14 +144,14 @@ function updateStoreStatus() {
     } else {
       statusElement.classList.add("closed");
       statusElement.innerHTML = `
-        <strong><span class="status-word status-closed">ZÁRVA</span></strong><br>
+        <strong><span class="status-word status-closed">Sajnos most ZÁRVA vagyunk</span></strong><br>
         Nyitásig: ${formatTimeLeft(remainingToOpen)}
       `;
     }
   } else {
     statusElement.classList.add("closed");
     statusElement.innerHTML = `
-      <strong><span class="status-word status-closed">ZÁRVA</span></strong>
+      <strong><span class="status-word status-closed">Sajnos most ZÁRVA vagyunk</span></strong>
     `;
   }
 }
